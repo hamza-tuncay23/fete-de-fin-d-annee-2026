@@ -11,6 +11,7 @@
     <!-- Bibliothèque QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+        /* ===== STYLES COMPLETS ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
         body {
             background: url('Fête.jpg') no-repeat center center fixed;
@@ -186,44 +187,45 @@
             cursor: not-allowed;
             transform: none !important;
         }
+
+        /* ===== TICKET AGRANDI - TOUT EST VISIBLE ===== */
         .ticket-preview {
             background: linear-gradient(145deg, #fcf8f0, #f5efe2);
             border-radius: 28px;
-            padding: 25px 25px;
+            padding: 30px 30px;
             border: 3px solid #c9a84c;
             margin-top: 20px;
             box-shadow: 0 8px 25px rgba(201, 168, 76, 0.15);
             transition: all 0.3s;
             width: 100%;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
+            max-width: 100%;
+            overflow: visible;
         }
         .ticket-preview:hover {
             box-shadow: 0 12px 35px rgba(201, 168, 76, 0.2);
             transform: translateY(-2px);
         }
-        .ticket-header { text-align: center; margin-bottom: 12px; }
+        .ticket-header { text-align: center; margin-bottom: 15px; }
         .ticket-header h2 {
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #0b1e33;
             letter-spacing: 2px;
         }
         .ticket-header h2 i { color: #c9a84c; margin-right: 10px; }
         .ticket-header .subtitle {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #6c5e42;
             letter-spacing: 4px;
         }
         .ticket-number-display {
             text-align: center;
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #0b1e33;
             letter-spacing: 3px;
-            margin: 8px 0;
-            padding: 8px;
+            margin: 12px 0;
+            padding: 10px;
             background: white;
             border-radius: 12px;
             border: 2px dashed #c9a84c;
@@ -231,56 +233,56 @@
         .ticket-row {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #e5dcc8;
         }
         .ticket-row:last-child { border-bottom: none; }
         .ticket-label {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             color: #6c5e42;
             text-transform: uppercase;
-            font-weight: 600;
+            font-weight: 700;
         }
         .ticket-value {
             font-weight: 600;
             color: #1c2f44;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
         }
         .ticket-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 12px;
-            padding-top: 12px;
+            margin-top: 15px;
+            padding-top: 15px;
             border-top: 2px solid #c9a84c;
+            gap: 20px;
             flex-wrap: wrap;
-            gap: 10px;
         }
         .ticket-qr {
             background: white;
-            padding: 6px;
-            border-radius: 10px;
+            padding: 8px;
+            border-radius: 12px;
             border: 2px solid #c9a84c;
             transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 90px;
-            height: 90px;
+            width: 110px;
+            height: 110px;
             flex-shrink: 0;
         }
         .ticket-qr:hover { transform: scale(1.02); }
         .ticket-qr canvas { 
             display: block; 
-            width: 78px !important;
-            height: 78px !important;
+            width: 90px !important;
+            height: 90px !important;
         }
         .ticket-user { 
             text-align: right;
             flex: 1;
         }
         .ticket-user .label {
-            font-size: 0.6rem;
+            font-size: 0.7rem;
             color: #6c5e42;
             text-transform: uppercase;
             font-weight: 700;
@@ -288,10 +290,10 @@
         .ticket-user .name {
             font-weight: 700;
             color: #0b1e33;
-            font-size: 0.95rem;
+            font-size: 1.1rem;
         }
         .ticket-user .status {
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             color: #6c5e42;
             text-transform: capitalize;
         }
@@ -680,7 +682,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* ===== STYLES D'IMPRESSION : TICKET COMPLET ===== */
+        /* ===== STYLES D'IMPRESSION - TICKET ENTIER ===== */
         @media print {
             body { background: white !important; }
             body::before { display: none !important; }
@@ -696,7 +698,6 @@
             }
             body * { visibility: hidden; }
             
-            /* Afficher uniquement le ticket */
             #printableTicket, #printableTicket * { visibility: visible; }
             #printableTicket {
                 position: fixed;
@@ -713,8 +714,8 @@
             }
             .ticket-preview {
                 width: 100%;
-                max-width: 480px;
-                padding: 25px 25px !important;
+                max-width: 500px;
+                padding: 30px 25px !important;
                 border: 3px solid #c9a84c !important;
                 border-radius: 20px !important;
                 background: linear-gradient(145deg, #fcf8f0, #f5efe2) !important;
@@ -722,56 +723,56 @@
                 margin: 0 auto;
             }
             .ticket-header h2 {
-                font-size: 1.5rem !important;
-                margin-bottom: 3px;
+                font-size: 1.6rem !important;
             }
             .ticket-header .subtitle {
-                font-size: 0.75rem !important;
+                font-size: 0.8rem !important;
             }
             .ticket-number-display {
-                font-size: 1.4rem !important;
-                padding: 6px !important;
-                margin: 6px 0 !important;
+                font-size: 1.6rem !important;
+                padding: 8px !important;
+                margin: 10px 0 !important;
             }
             .ticket-row {
-                padding: 4px 0 !important;
+                padding: 6px 0 !important;
                 display: flex !important;
                 justify-content: space-between !important;
             }
             .ticket-label {
-                font-size: 0.65rem !important;
+                font-size: 0.7rem !important;
                 font-weight: 700 !important;
             }
             .ticket-value {
-                font-size: 0.8rem !important;
+                font-size: 0.85rem !important;
             }
             .ticket-footer {
-                margin-top: 10px !important;
-                padding-top: 10px !important;
+                margin-top: 12px !important;
+                padding-top: 12px !important;
                 display: flex !important;
                 justify-content: space-between !important;
                 align-items: center !important;
                 flex-wrap: nowrap !important;
+                gap: 10px !important;
             }
             .ticket-qr {
-                padding: 4px !important;
-                width: 80px !important;
-                height: 80px !important;
+                padding: 5px !important;
+                width: 85px !important;
+                height: 85px !important;
                 flex-shrink: 0 !important;
                 border: 2px solid #c9a84c !important;
             }
             .ticket-qr canvas {
-                width: 68px !important;
-                height: 68px !important;
+                width: 72px !important;
+                height: 72px !important;
             }
             .ticket-user .label {
-                font-size: 0.55rem !important;
+                font-size: 0.6rem !important;
             }
             .ticket-user .name {
-                font-size: 0.85rem !important;
+                font-size: 0.9rem !important;
             }
             .ticket-user .status {
-                font-size: 0.6rem !important;
+                font-size: 0.65rem !important;
             }
             .print-btn, .no-print { display: none !important; }
             .app-wrapper {
@@ -1627,8 +1628,8 @@
                     try {
                         new QRCode(container, {
                             text: ticketData,
-                            width: 78,
-                            height: 78,
+                            width: 90,
+                            height: 90,
                             colorDark: '#0b1e33',
                             colorLight: '#ffffff',
                             correctLevel: QRCode.CorrectLevel.H
