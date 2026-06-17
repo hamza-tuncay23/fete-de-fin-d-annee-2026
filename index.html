@@ -251,18 +251,23 @@
         }
         .ticket-qr {
             background: white;
-            padding: 8px;
-            border-radius: 12px;
+            padding: 6px;
+            border-radius: 10px;
             border: 2px solid #c9a84c;
             transition: all 0.3s;
-            min-width: 116px;
-            min-height: 116px;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
         }
         .ticket-qr:hover { transform: scale(1.02); }
-        .ticket-qr canvas { display: block; }
+        .ticket-qr canvas { 
+            display: block; 
+            width: 78px !important;
+            height: 78px !important;
+        }
         .ticket-user { text-align: right; }
         .ticket-user .label {
             font-size: 0.65rem;
@@ -660,7 +665,9 @@
             to { transform: rotate(360deg); }
         }
 
+        /* ===== STYLES D'IMPRESSION CORRIGÉS ===== */
         @media print {
+            /* Cacher tout sauf le ticket */
             body { background: white !important; }
             body::before { display: none !important; }
             .app-wrapper {
@@ -669,8 +676,13 @@
                 -webkit-backdrop-filter: none !important;
                 box-shadow: none !important;
                 border: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                border-radius: 0 !important;
             }
             body * { visibility: hidden; }
+            
+            /* Afficher uniquement le ticket */
             #printableTicket, #printableTicket * { visibility: visible; }
             #printableTicket {
                 position: fixed;
@@ -682,38 +694,70 @@
                 justify-content: center;
                 align-items: center;
                 background: white;
-                padding: 40px;
+                padding: 20px;
+                margin: 0;
             }
             .ticket-preview {
                 width: 100%;
-                max-width: 500px;
-                padding: 40px 35px;
-                border: 4px solid #c9a84c !important;
-                border-radius: 30px !important;
+                max-width: 450px;
+                padding: 30px 25px;
+                border: 3px solid #c9a84c !important;
+                border-radius: 20px !important;
                 background: linear-gradient(145deg, #fcf8f0, #f5efe2) !important;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+                box-shadow: none !important;
                 margin: 0 auto;
             }
-            .ticket-header h2 { font-size: 2.2rem !important; }
+            .ticket-header h2 {
+                font-size: 1.6rem !important;
+                margin-bottom: 5px;
+            }
+            .ticket-header .subtitle {
+                font-size: 0.8rem !important;
+            }
             .ticket-number-display {
-                font-size: 2.2rem !important;
-                padding: 12px !important;
-                margin: 15px 0 !important;
+                font-size: 1.6rem !important;
+                padding: 8px !important;
+                margin: 8px 0 !important;
             }
-            .ticket-row { padding: 10px 0 !important; }
-            .ticket-label { font-size: 0.9rem !important; }
-            .ticket-value { font-size: 1rem !important; }
+            .ticket-row {
+                padding: 4px 0 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+            }
+            .ticket-label {
+                font-size: 0.7rem !important;
+                font-weight: 700 !important;
+            }
+            .ticket-value {
+                font-size: 0.85rem !important;
+            }
             .ticket-footer {
-                margin-top: 20px !important;
-                padding-top: 20px !important;
+                margin-top: 12px !important;
+                padding-top: 12px !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
             }
-            .ticket-qr { padding: 10px !important; }
+            .ticket-qr {
+                padding: 4px !important;
+                width: 70px !important;
+                height: 70px !important;
+                flex-shrink: 0 !important;
+                border: 2px solid #c9a84c !important;
+            }
             .ticket-qr canvas {
-                width: 120px !important;
-                height: 120px !important;
+                width: 60px !important;
+                height: 60px !important;
             }
-            .ticket-user .label { font-size: 0.8rem !important; }
-            .ticket-user .name { font-size: 1.2rem !important; }
+            .ticket-user .label {
+                font-size: 0.6rem !important;
+            }
+            .ticket-user .name {
+                font-size: 0.9rem !important;
+            }
+            .ticket-user div {
+                font-size: 0.65rem !important;
+            }
             .print-btn, .no-print { display: none !important; }
             .app-wrapper {
                 padding: 0 !important;
@@ -729,7 +773,7 @@
             }
             @page {
                 size: A4;
-                margin: 0;
+                margin: 10mm;
             }
         }
     </style>
@@ -1171,11 +1215,9 @@
         measurementId: "G-LXZD5HKC9X"
     };
 
-    // Initialiser Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ===== APPLICATION VUE =====
     new Vue({
         el: '#app',
         data: {
@@ -1284,10 +1326,8 @@
             }
         },
         methods: {
-            // ===== FIREBASE - CHARGEMENT DES DONNÉES =====
             loadData() {
                 this.loading = true;
-                
                 db.collection('authorizedPhones').get().then(snapshot => {
                     this.authorizedPhones = [];
                     snapshot.forEach(doc => {
@@ -1339,72 +1379,39 @@
 
             loadDefaultPhones() {
                 this.authorizedPhones = [
-                    { number: '0776575261', class: 'TSI-1' },
-                    { number: '0719841962', class: 'TSI-1' },
-                    { number: '0634464094', class: 'TSI-1' },
-                    { number: '0633250960', class: 'TSI-1' },
-                    { number: '0610171188', class: 'TSI-1' },
-                    { number: '0644872199', class: 'TSI-1' },
-                    { number: '0649603694', class: 'TSI-1' },
-                    { number: '0607974160', class: 'TSI-1' },
-                    { number: '0621036371', class: 'TSI-1' },
-                    { number: '0770647622', class: 'TSI-1' },
-                    { number: '0600100070', class: 'TSI-1' },
-                    { number: '0641319116', class: 'TSI-1' },
-                    { number: '0609388851', class: 'TSI-1' },
-                    { number: '0711876854', class: 'TSI-1' },
-                    { number: '0603153849', class: 'TSI-1' },
-                    { number: '0635613405', class: 'TSI-1' },
-                    { number: '0691240952', class: 'TSI-1' },
-                    { number: '0625077387', class: 'TSI-1' },
-                    { number: '0691301641', class: 'TSI-1' },
-                    { number: '0681956648', class: 'TSI-2' },
-                    { number: '0716310938', class: 'TSI-2' },
-                    { number: '0684871530', class: 'TSI-2' },
-                    { number: '0710003040', class: 'TSI-2' },
-                    { number: '0618681517', class: 'TSI-2' },
-                    { number: '0690625961', class: 'TSI-2' },
-                    { number: '0714219529', class: 'TSI-2' },
-                    { number: '0640262122', class: 'TSI-2' },
-                    { number: '0714500408', class: 'TSI-2' },
-                    { number: '0619466689', class: 'TSI-2' },
-                    { number: '0637720052', class: 'TSI-2' },
-                    { number: '0632201123', class: 'TSI-2' },
-                    { number: '0771586316', class: 'TSI-2' },
-                    { number: '0650369338', class: 'TSI-2' },
-                    { number: '0691058166', class: 'TSI-2' },
-                    { number: '0700160405', class: 'TSI-2' },
-                    { number: '0775259567', class: 'TSI-2' },
-                    { number: '0716172423', class: 'TSI-2' },
-                    { number: '0610474268', class: 'TSI-3' },
-                    { number: '0777402332', class: 'TSI-3' },
-                    { number: '0767249492', class: 'TSI-3' },
-                    { number: '0673018559', class: 'TSI-3' },
-                    { number: '0615613537', class: 'TSI-3' },
-                    { number: '0629351981', class: 'TSI-3' },
-                    { number: '0664853846', class: 'TSI-3' },
-                    { number: '0621251365', class: 'TSI-3' },
-                    { number: '0619300599', class: 'TSI-3' },
-                    { number: '0614012895', class: 'TSI-3' },
-                    { number: '0644467972', class: 'TSI-3' },
-                    { number: '0612194219', class: 'TSI-3' },
-                    { number: '0655331902', class: 'TSI-3' },
-                    { number: '0763272609', class: 'TSI-3' },
-                    { number: '0771047909', class: 'TSI-3' },
-                    { number: '0617507750', class: 'MPSI-1' },
-                    { number: '0601919351', class: 'MPSI-1' },
-                    { number: '0697035706', class: 'MPSI-1' },
-                    { number: '0767880693', class: 'MPSI-1' },
-                    { number: '0626143836', class: 'MPSI-1' },
-                    { number: '0767748809', class: 'MPSI-1' },
-                    { number: '0713526906', class: 'MPSI-2' },
-                    { number: '0603273216', class: 'MPSI-2' },
-                    { number: '0760234168', class: 'MPSI-2' },
-                    { number: '0626768713', class: 'MPSI-2' },
-                    { number: '0687919151', class: 'MPSI-2' },
-                    { number: '0668034758', class: 'MPSI-2' },
-                    { number: '0675657421', class: 'MPSI-2' },
-                    { number: '0623813122', class: 'MPSI-2' },
+                    { number: '0776575261', class: 'TSI-1' }, { number: '0719841962', class: 'TSI-1' },
+                    { number: '0634464094', class: 'TSI-1' }, { number: '0633250960', class: 'TSI-1' },
+                    { number: '0610171188', class: 'TSI-1' }, { number: '0644872199', class: 'TSI-1' },
+                    { number: '0649603694', class: 'TSI-1' }, { number: '0607974160', class: 'TSI-1' },
+                    { number: '0621036371', class: 'TSI-1' }, { number: '0770647622', class: 'TSI-1' },
+                    { number: '0600100070', class: 'TSI-1' }, { number: '0641319116', class: 'TSI-1' },
+                    { number: '0609388851', class: 'TSI-1' }, { number: '0711876854', class: 'TSI-1' },
+                    { number: '0603153849', class: 'TSI-1' }, { number: '0635613405', class: 'TSI-1' },
+                    { number: '0691240952', class: 'TSI-1' }, { number: '0625077387', class: 'TSI-1' },
+                    { number: '0691301641', class: 'TSI-1' }, { number: '0681956648', class: 'TSI-2' },
+                    { number: '0716310938', class: 'TSI-2' }, { number: '0684871530', class: 'TSI-2' },
+                    { number: '0710003040', class: 'TSI-2' }, { number: '0618681517', class: 'TSI-2' },
+                    { number: '0690625961', class: 'TSI-2' }, { number: '0714219529', class: 'TSI-2' },
+                    { number: '0640262122', class: 'TSI-2' }, { number: '0714500408', class: 'TSI-2' },
+                    { number: '0619466689', class: 'TSI-2' }, { number: '0637720052', class: 'TSI-2' },
+                    { number: '0632201123', class: 'TSI-2' }, { number: '0771586316', class: 'TSI-2' },
+                    { number: '0650369338', class: 'TSI-2' }, { number: '0691058166', class: 'TSI-2' },
+                    { number: '0700160405', class: 'TSI-2' }, { number: '0775259567', class: 'TSI-2' },
+                    { number: '0716172423', class: 'TSI-2' }, { number: '0610474268', class: 'TSI-3' },
+                    { number: '0777402332', class: 'TSI-3' }, { number: '0767249492', class: 'TSI-3' },
+                    { number: '0673018559', class: 'TSI-3' }, { number: '0615613537', class: 'TSI-3' },
+                    { number: '0629351981', class: 'TSI-3' }, { number: '0664853846', class: 'TSI-3' },
+                    { number: '0621251365', class: 'TSI-3' }, { number: '0619300599', class: 'TSI-3' },
+                    { number: '0614012895', class: 'TSI-3' }, { number: '0644467972', class: 'TSI-3' },
+                    { number: '0612194219', class: 'TSI-3' }, { number: '0655331902', class: 'TSI-3' },
+                    { number: '0763272609', class: 'TSI-3' }, { number: '0771047909', class: 'TSI-3' },
+                    { number: '0617507750', class: 'MPSI-1' }, { number: '0601919351', class: 'MPSI-1' },
+                    { number: '0697035706', class: 'MPSI-1' }, { number: '0767880693', class: 'MPSI-1' },
+                    { number: '0626143836', class: 'MPSI-1' }, { number: '0767748809', class: 'MPSI-1' },
+                    { number: '0713526906', class: 'MPSI-2' }, { number: '0603273216', class: 'MPSI-2' },
+                    { number: '0760234168', class: 'MPSI-2' }, { number: '0626768713', class: 'MPSI-2' },
+                    { number: '0687919151', class: 'MPSI-2' }, { number: '0668034758', class: 'MPSI-2' },
+                    { number: '0675657421', class: 'MPSI-2' }, { number: '0623813122', class: 'MPSI-2' },
                     { number: '0781254076', class: 'MP-2' }
                 ];
                 this.authorizedPhones.forEach(phone => {
@@ -1576,7 +1583,6 @@
                     this.form.email = '';
                     this.form.status = 'Participant';
 
-                    // Générer le QR code après que le DOM soit mis à jour
                     this.$nextTick(() => {
                         this.generateQRCode();
                     });
@@ -1589,13 +1595,9 @@
             generateQRCode() {
                 const container = document.getElementById('qrContainer');
                 if (container) {
-                    // Vider le conteneur
                     container.innerHTML = '';
-                    
-                    // Vérifier que currentTicket existe
                     if (!this.currentTicket) return;
                     
-                    // Créer les données du ticket
                     const ticketData = JSON.stringify({
                         number: this.currentTicket.number,
                         firstname: this.currentTicket.firstname,
@@ -1609,11 +1611,10 @@
                     });
                     
                     try {
-                        // Générer le QR code
                         new QRCode(container, {
                             text: ticketData,
-                            width: 100,
-                            height: 100,
+                            width: 78,
+                            height: 78,
                             colorDark: '#0b1e33',
                             colorLight: '#ffffff',
                             correctLevel: QRCode.CorrectLevel.H
