@@ -114,6 +114,8 @@
             box-shadow: 0 6px 20px rgba(0, 20, 40, 0.06);
             border: 1px solid rgba(201, 168, 76, 0.15);
             transition: all 0.3s;
+            max-width: 100%;
+            overflow: visible;
         }
         .card:hover {
             box-shadow: 0 8px 30px rgba(0, 20, 40, 0.1);
@@ -188,7 +190,7 @@
             transform: none !important;
         }
 
-        /* ===== TICKET AGRANDI - TOUT EST VISIBLE ===== */
+        /* ===== TICKET - TOUT VISIBLE ===== */
         .ticket-preview {
             background: linear-gradient(145deg, #fcf8f0, #f5efe2);
             border-radius: 28px;
@@ -242,11 +244,13 @@
             color: #6c5e42;
             text-transform: uppercase;
             font-weight: 700;
+            white-space: nowrap;
         }
         .ticket-value {
             font-weight: 600;
             color: #1c2f44;
             font-size: 0.95rem;
+            text-align: right;
         }
         .ticket-footer {
             display: flex;
@@ -682,7 +686,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* ===== STYLES D'IMPRESSION - TICKET ENTIER ===== */
+        /* ===== STYLES D'IMPRESSION ===== */
         @media print {
             body { background: white !important; }
             body::before { display: none !important; }
@@ -813,7 +817,7 @@
     <div class="page" :class="{ active: currentPage === 'main' && !loading }">
         <div class="main-grid">
             <div>
-                <div class="card">
+                <div class="card" style="max-width:100%; overflow:visible;">
                     <div class="card-title no-print"><i class="fas fa-pen-alt"></i> Inscription</div>
                     
                     <div v-if="formError" class="error-msg-form">
