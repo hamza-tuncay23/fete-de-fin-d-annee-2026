@@ -255,6 +255,11 @@
             border-radius: 12px;
             border: 2px solid #c9a84c;
             transition: all 0.3s;
+            min-width: 116px;
+            min-height: 116px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .ticket-qr:hover { transform: scale(1.02); }
         .ticket-qr canvas { display: block; }
@@ -810,18 +815,20 @@
                             </div>
                             <div class="ticket-row">
                                 <span class="ticket-label">TITULAIRE</span>
-                                <span class="ticket-value">{{ currentTicket.firstname }} {{ currentTicket.lastname }}</span>
+                                <span class="ticket-value" style="text-transform:uppercase;">{{ currentTicket.firstname }} {{ currentTicket.lastname }}</span>
                             </div>
                             <div class="ticket-row">
                                 <span class="ticket-label">CLASSE</span>
-                                <span class="ticket-value">{{ currentTicket.class }}</span>
+                                <span class="ticket-value">{{ currentTicket.class || 'Non précisé' }}</span>
                             </div>
                             <div class="ticket-footer">
-                                <div class="ticket-qr" id="qrContainer"></div>
+                                <div class="ticket-qr" id="qrContainer">
+                                    <!-- QR code sera généré ici -->
+                                </div>
                                 <div class="ticket-user">
                                     <div class="label">TICKET VALIDE</div>
-                                    <div class="name">{{ currentTicket.firstname }} {{ currentTicket.lastname }}</div>
-                                    <div style="font-size:0.7rem;color:#6c5e42;">{{ currentTicket.status }}</div>
+                                    <div class="name" style="text-transform:uppercase;">{{ currentTicket.firstname }} {{ currentTicket.lastname }}</div>
+                                    <div style="font-size:0.7rem;color:#6c5e42;text-transform:capitalize;">{{ currentTicket.status }}</div>
                                 </div>
                             </div>
                         </div>
@@ -1281,7 +1288,6 @@
             loadData() {
                 this.loading = true;
                 
-                // Charger les numéros autorisés
                 db.collection('authorizedPhones').get().then(snapshot => {
                     this.authorizedPhones = [];
                     snapshot.forEach(doc => {
@@ -1295,7 +1301,6 @@
                     this.loadDefaultPhones();
                 });
 
-                // Écouter les changements des participants en temps réel
                 if (this.unsubscribeParticipants) {
                     this.unsubscribeParticipants();
                 }
@@ -1319,7 +1324,6 @@
                         this.loading = false;
                     });
 
-                // Charger les logs admin
                 db.collection('adminLogs').orderBy('loginTime', 'desc').get().then(snapshot => {
                     this.adminLogs = [];
                     snapshot.forEach(doc => {
@@ -1335,7 +1339,6 @@
 
             loadDefaultPhones() {
                 this.authorizedPhones = [
-                    // TSI-1
                     { number: '0776575261', class: 'TSI-1' },
                     { number: '0719841962', class: 'TSI-1' },
                     { number: '0634464094', class: 'TSI-1' },
@@ -1355,7 +1358,6 @@
                     { number: '0691240952', class: 'TSI-1' },
                     { number: '0625077387', class: 'TSI-1' },
                     { number: '0691301641', class: 'TSI-1' },
-                    // TSI-2
                     { number: '0681956648', class: 'TSI-2' },
                     { number: '0716310938', class: 'TSI-2' },
                     { number: '0684871530', class: 'TSI-2' },
@@ -1374,7 +1376,6 @@
                     { number: '0700160405', class: 'TSI-2' },
                     { number: '0775259567', class: 'TSI-2' },
                     { number: '0716172423', class: 'TSI-2' },
-                    // TSI-3
                     { number: '0610474268', class: 'TSI-3' },
                     { number: '0777402332', class: 'TSI-3' },
                     { number: '0767249492', class: 'TSI-3' },
@@ -1390,14 +1391,12 @@
                     { number: '0655331902', class: 'TSI-3' },
                     { number: '0763272609', class: 'TSI-3' },
                     { number: '0771047909', class: 'TSI-3' },
-                    // MPSI-1
                     { number: '0617507750', class: 'MPSI-1' },
                     { number: '0601919351', class: 'MPSI-1' },
                     { number: '0697035706', class: 'MPSI-1' },
                     { number: '0767880693', class: 'MPSI-1' },
                     { number: '0626143836', class: 'MPSI-1' },
                     { number: '0767748809', class: 'MPSI-1' },
-                    // MPSI-2
                     { number: '0713526906', class: 'MPSI-2' },
                     { number: '0603273216', class: 'MPSI-2' },
                     { number: '0760234168', class: 'MPSI-2' },
@@ -1406,10 +1405,8 @@
                     { number: '0668034758', class: 'MPSI-2' },
                     { number: '0675657421', class: 'MPSI-2' },
                     { number: '0623813122', class: 'MPSI-2' },
-                    // MP-2
                     { number: '0781254076', class: 'MP-2' }
                 ];
-                // Sauvegarder dans Firebase
                 this.authorizedPhones.forEach(phone => {
                     db.collection('authorizedPhones').add(phone).catch(err => console.error(err));
                 });
@@ -1579,6 +1576,7 @@
                     this.form.email = '';
                     this.form.status = 'Participant';
 
+                    // Générer le QR code après que le DOM soit mis à jour
                     this.$nextTick(() => {
                         this.generateQRCode();
                     });
@@ -1591,7 +1589,13 @@
             generateQRCode() {
                 const container = document.getElementById('qrContainer');
                 if (container) {
+                    // Vider le conteneur
                     container.innerHTML = '';
+                    
+                    // Vérifier que currentTicket existe
+                    if (!this.currentTicket) return;
+                    
+                    // Créer les données du ticket
                     const ticketData = JSON.stringify({
                         number: this.currentTicket.number,
                         firstname: this.currentTicket.firstname,
@@ -1603,14 +1607,21 @@
                         date: '2026-06-21',
                         obtained: this.currentTicket.obtainedTime
                     });
-                    new QRCode(container, {
-                        text: ticketData,
-                        width: 100,
-                        height: 100,
-                        colorDark: '#0b1e33',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
+                    
+                    try {
+                        // Générer le QR code
+                        new QRCode(container, {
+                            text: ticketData,
+                            width: 100,
+                            height: 100,
+                            colorDark: '#0b1e33',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    } catch (e) {
+                        console.error('Erreur génération QR:', e);
+                        container.innerHTML = '<span style="font-size:0.7rem;color:#6c5e42;">QR</span>';
+                    }
                 }
             },
             printTicket() { window.print(); },
