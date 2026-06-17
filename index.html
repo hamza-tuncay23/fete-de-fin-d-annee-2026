@@ -191,7 +191,7 @@
             transform: none !important;
         }
 
-        /* ===== TICKET PORTRAIT AVEC COINS ARRONDIS ===== */
+        /* ===== TICKET PORTRAIT ===== */
         .ticket-preview {
             background: linear-gradient(145deg, #fcf8f0, #f5efe2);
             border-radius: 28px;
@@ -416,6 +416,7 @@
             color: #c9a84c;
         }
 
+        /* ===== ADMIN ===== */
         .admin-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -464,6 +465,15 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 15px rgba(11, 30, 51, 0.15);
         }
+        .btn-outline.btn-refresh {
+            border-color: #c9a84c;
+            color: #0b1e33;
+        }
+        .btn-outline.btn-refresh:hover {
+            background: #c9a84c;
+            color: white;
+            border-color: #c9a84c;
+        }
         .btn-danger-outline {
             border-color: #d47c7c;
             color: #a13d3d;
@@ -491,12 +501,44 @@
             color: white;
             border-color: #c9a84c;
         }
+        .btn-toggle-table {
+            background: rgba(201, 168, 76, 0.15);
+            border: 2px solid #c9a84c;
+            padding: 6px 14px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #0b1e33;
+        }
+        .btn-toggle-table:hover {
+            background: #c9a84c;
+            color: white;
+        }
+        .btn-toggle-table i { margin-right: 6px; }
         .table-wrap {
             overflow-x: auto;
             margin-top: 10px;
             border-radius: 14px;
             border: 1px solid rgba(201, 168, 76, 0.15);
             background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s;
+        }
+        .table-wrap.collapsed {
+            max-height: 250px;
+            overflow-y: hidden;
+            position: relative;
+        }
+        .table-wrap.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(transparent, rgba(255, 255, 255, 0.95));
+            pointer-events: none;
         }
         table {
             width: 100%;
@@ -760,8 +802,27 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-
-        /* ===== STYLES POUR LE TÉLÉCHARGEMENT ===== */
+        .refresh-spinning {
+            animation: spin 0.8s linear infinite;
+        }
+        .table-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .table-section-header h3 {
+            color: #0b1e33;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-section-header h3 i {
+            color: #c9a84c;
+        }
         #ticketToDownload {
             border-radius: 28px !important;
             overflow: hidden !important;
@@ -858,9 +919,7 @@
                                 <span class="ticket-value">{{ currentTicket.class || 'Non précisé' }}</span>
                             </div>
                             <div class="ticket-footer">
-                                <div class="ticket-qr" id="qrContainer">
-                                    <!-- QR code généré ici -->
-                                </div>
+                                <div class="ticket-qr" id="qrContainer"></div>
                                 <div class="ticket-user">
                                     <div class="label">TICKET VALIDE</div>
                                     <div class="name" style="text-transform:uppercase;">{{ currentTicket.firstname }} {{ currentTicket.lastname }}</div>
@@ -953,6 +1012,9 @@
                         {{ sortAsc ? 'Croissant' : 'Décroissant' }}
                     </button>
                     <button class="btn-outline" @click="resetFilters"><i class="fas fa-undo"></i> Réinitialiser</button>
+                    <button class="btn-outline btn-refresh" @click="refreshData" :disabled="refreshing">
+                        <i class="fas fa-sync-alt" :class="{ 'refresh-spinning': refreshing }"></i> Actualiser
+                    </button>
                 </div>
 
                 <div class="admin-toolbar" style="margin-bottom:10px;">
@@ -1032,10 +1094,15 @@
 
                 <!-- Gestion des numéros autorisés -->
                 <div style="margin-bottom:25px;background:rgba(201, 168, 76, 0.08);border-radius:18px;padding:16px;border:1px solid rgba(201, 168, 76, 0.2);">
-                    <h3 style="color:#0b1e33;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:1rem;">
-                        <i class="fas fa-phone-alt" style="color:#c9a84c;"></i> Gestion des numéros autorisés
-                        <span style="font-size:0.7rem;font-weight:400;color:#6a7f9a;background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;">{{ authorizedPhones.length }} numéros</span>
-                    </h3>
+                    <div class="table-section-header">
+                        <h3><i class="fas fa-phone-alt"></i> Gestion des numéros autorisés
+                            <span style="font-size:0.7rem;font-weight:400;color:#6a7f9a;background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;">{{ authorizedPhones.length }} numéros</span>
+                        </h3>
+                        <button class="btn-toggle-table" @click="togglePhoneTable">
+                            <i class="fas" :class="phoneTableExpanded ? 'fa-compress' : 'fa-expand'"></i>
+                            {{ phoneTableExpanded ? 'Réduire' : 'Agrandir' }}
+                        </button>
+                    </div>
                     <div style="font-size:0.75rem;color:#6a7f9a;margin-bottom:8px;">
                         <i class="fas fa-info-circle" style="color:#c9a84c;"></i> La vérification se fait uniquement par numéro de téléphone. La classe est affichée à titre informatif.
                     </div>
@@ -1052,8 +1119,11 @@
                         </select>
                         <button class="btn-outline btn-success-outline" @click="addAuthorizedPhone"><i class="fas fa-plus"></i> Ajouter</button>
                         <button class="btn-outline btn-danger-outline" @click="deleteSelectedPhones"><i class="fas fa-trash-alt"></i> Supprimer sélection</button>
+                        <button class="btn-outline btn-refresh" @click="refreshData" :disabled="refreshing">
+                            <i class="fas fa-sync-alt" :class="{ 'refresh-spinning': refreshing }"></i>
+                        </button>
                     </div>
-                    <div class="table-wrap">
+                    <div class="table-wrap" :class="{ collapsed: !phoneTableExpanded }">
                         <table>
                             <thead>
                                 <tr>
@@ -1078,19 +1148,27 @@
 
                 <!-- Deuxième tableau: Logs des connexions BDE -->
                 <div style="margin-bottom:25px;">
-                    <h3 style="color:#0b1e33;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:1rem;">
-                        <i class="fas fa-history" style="color:#c9a84c;"></i> Historique des connexions BDE
-                        <span style="font-size:0.7rem;font-weight:400;color:#6a7f9a;background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;">{{ adminLogs.length }} connexions</span>
-                    </h3>
+                    <div class="table-section-header">
+                        <h3><i class="fas fa-history"></i> Historique des connexions BDE
+                            <span style="font-size:0.7rem;font-weight:400;color:#6a7f9a;background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;">{{ adminLogs.length }} connexions</span>
+                        </h3>
+                        <button class="btn-toggle-table" @click="toggleLogsTable">
+                            <i class="fas" :class="logsTableExpanded ? 'fa-compress' : 'fa-expand'"></i>
+                            {{ logsTableExpanded ? 'Réduire' : 'Agrandir' }}
+                        </button>
+                    </div>
                     
                     <div class="admin-toolbar" style="margin-bottom:10px;">
                         <input type="text" v-model="logSearchQuery" placeholder="🔍 Rechercher dans les logs..." style="flex:1;min-width:120px;">
                         <button class="btn-outline btn-danger-outline" @click="deleteSelectedLogs"><i class="fas fa-trash-alt"></i> Supprimer sélection</button>
                         <button class="btn-outline" @click="selectAllLogs"><i class="fas fa-check-double"></i> Tout sélectionner</button>
                         <button class="btn-outline" @click="deselectAllLogs"><i class="fas fa-times"></i> Tout désélectionner</button>
+                        <button class="btn-outline btn-refresh" @click="refreshData" :disabled="refreshing">
+                            <i class="fas fa-sync-alt" :class="{ 'refresh-spinning': refreshing }"></i>
+                        </button>
                     </div>
 
-                    <div class="table-wrap">
+                    <div class="table-wrap" :class="{ collapsed: !logsTableExpanded }">
                         <table>
                             <thead>
                                 <tr>
@@ -1116,92 +1194,102 @@
                 </div>
 
                 <!-- Premier tableau: Participants -->
-                <h3 style="color:#0b1e33;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:1rem;">
-                    <i class="fas fa-users" style="color:#c9a84c;"></i> Liste des participants
-                    <span style="font-size:0.7rem;font-weight:400;color:#6a7f9a;background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;">{{ participants.length }} inscrits</span>
-                </h3>
+                <div>
+                    <div class="table-section-header">
+                        <h3><i class="fas fa-users"></i> Liste des participants
+                            <span style="font-size:0.7rem;font-weight:400;color:#6a7f9a;background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;">{{ participants.length }} inscrits</span>
+                        </h3>
+                        <button class="btn-toggle-table" @click="toggleParticipantsTable">
+                            <i class="fas" :class="participantsTableExpanded ? 'fa-compress' : 'fa-expand'"></i>
+                            {{ participantsTableExpanded ? 'Réduire' : 'Agrandir' }}
+                        </button>
+                    </div>
 
-                <div class="admin-toolbar">
-                    <input type="text" v-model="searchQuery" placeholder="🔍 Rechercher...">
-                    <select v-model="filterStatus">
-                        <option value="all">Tous les statuts</option>
-                        <option value="Participant">Participant</option>
-                        <option value="Administration ou Professeur">Administration ou Professeur</option>
-                        <option value="Visiteur">Visiteur</option>
-                    </select>
-                    <select v-model="filterConfirmed">
-                        <option value="all">Tous</option>
-                        <option value="confirmed">Confirmés ✅</option>
-                        <option value="unconfirmed">Non confirmés ❌</option>
-                    </select>
-                    <select v-model="sortBy">
-                        <option value="number">Trier par N° Ticket</option>
-                        <option value="lastname">Trier par Nom</option>
-                        <option value="firstname">Trier par Prénom</option>
-                        <option value="class">Trier par Classe</option>
-                        <option value="status">Trier par Statut</option>
-                        <option value="obtainedTime">Trier par Date d'obtention</option>
-                        <option value="scanTime">Trier par Date de scan</option>
-                    </select>
-                    <button class="btn-outline btn-gold-outline" @click="toggleSortOrder">
-                        <i class="fas" :class="sortAsc ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
-                        {{ sortAsc ? 'Croissant' : 'Décroissant' }}
-                    </button>
-                    <button class="btn-outline" @click="resetFilters"><i class="fas fa-undo"></i> Réinitialiser</button>
-                </div>
+                    <div class="admin-toolbar">
+                        <input type="text" v-model="searchQuery" placeholder="🔍 Rechercher...">
+                        <select v-model="filterStatus">
+                            <option value="all">Tous les statuts</option>
+                            <option value="Participant">Participant</option>
+                            <option value="Administration ou Professeur">Administration ou Professeur</option>
+                            <option value="Visiteur">Visiteur</option>
+                        </select>
+                        <select v-model="filterConfirmed">
+                            <option value="all">Tous</option>
+                            <option value="confirmed">Confirmés ✅</option>
+                            <option value="unconfirmed">Non confirmés ❌</option>
+                        </select>
+                        <select v-model="sortBy">
+                            <option value="number">Trier par N° Ticket</option>
+                            <option value="lastname">Trier par Nom</option>
+                            <option value="firstname">Trier par Prénom</option>
+                            <option value="class">Trier par Classe</option>
+                            <option value="status">Trier par Statut</option>
+                            <option value="obtainedTime">Trier par Date d'obtention</option>
+                            <option value="scanTime">Trier par Date de scan</option>
+                        </select>
+                        <button class="btn-outline btn-gold-outline" @click="toggleSortOrder">
+                            <i class="fas" :class="sortAsc ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+                            {{ sortAsc ? 'Croissant' : 'Décroissant' }}
+                        </button>
+                        <button class="btn-outline" @click="resetFilters"><i class="fas fa-undo"></i> Réinitialiser</button>
+                        <button class="btn-outline btn-refresh" @click="refreshData" :disabled="refreshing">
+                            <i class="fas fa-sync-alt" :class="{ 'refresh-spinning': refreshing }"></i>
+                        </button>
+                    </div>
 
-                <div class="admin-toolbar" style="margin-bottom:10px;">
-                    <button class="btn-outline btn-success-outline" @click="addRow"><i class="fas fa-plus-circle"></i> Ajouter ligne</button>
-                    <button class="btn-outline btn-danger-outline" @click="deleteSelected"><i class="fas fa-trash-alt"></i> Supprimer sélection</button>
-                    <button class="btn-outline" @click="exportCSV"><i class="fas fa-file-csv"></i> Exporter CSV</button>
-                    <span style="font-size:0.7rem;color:#6a7f9a;margin-left:auto;">
-                        <i class="fas fa-users"></i> {{ filteredAndSortedParticipants.length }} / {{ participants.length }}
-                    </span>
-                </div>
+                    <div class="admin-toolbar" style="margin-bottom:10px;">
+                        <button class="btn-outline btn-success-outline" @click="addRow"><i class="fas fa-plus-circle"></i> Ajouter ligne</button>
+                        <button class="btn-outline btn-danger-outline" @click="deleteSelected"><i class="fas fa-trash-alt"></i> Supprimer sélection</button>
+                        <button class="btn-outline" @click="exportCSV"><i class="fas fa-file-csv"></i> Exporter CSV</button>
+                        <span style="font-size:0.7rem;color:#6a7f9a;margin-left:auto;">
+                            <i class="fas fa-users"></i> {{ filteredAndSortedParticipants.length }} / {{ participants.length }}
+                        </span>
+                    </div>
 
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:20px;"><input type="checkbox" @change="selectAll($event)"></th>
-                                <th @click="setSort('number')">N° Ticket <i class="fas" :class="getSortIcon('number')"></i></th>
-                                <th @click="setSort('obtainedTime')">Obtenu le <i class="fas" :class="getSortIcon('obtainedTime')"></i></th>
-                                <th @click="setSort('lastname')">Nom <i class="fas" :class="getSortIcon('lastname')"></i></th>
-                                <th @click="setSort('firstname')">Prénom <i class="fas" :class="getSortIcon('firstname')"></i></th>
-                                <th @click="setSort('class')">Classe <i class="fas" :class="getSortIcon('class')"></i></th>
-                                <th @click="setSort('status')">Statut <i class="fas" :class="getSortIcon('status')"></i></th>
-                                <th>Confirmé</th>
-                                <th @click="setSort('scanTime')">Scan le <i class="fas" :class="getSortIcon('scanTime')"></i></th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(p, idx) in filteredAndSortedParticipants" :key="p.id">
-                                <td><input type="checkbox" v-model="selectedRows" :value="getOriginalIndex(p)"></td>
-                                <td><span style="font-weight:600;color:#0b1e33;">#{{ p.number.toString().padStart(10, '0') }}</span></td>
-                                <td><span class="badge-time"><i class="far fa-clock" style="color:#c9a84c;"></i> {{ p.obtainedTime || '—' }}</span></td>
-                                <td><strong>{{ p.lastname }}</strong></td>
-                                <td>{{ p.firstname }}</td>
-                                <td>{{ p.class }}</td>
-                                <td><span style="background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;font-size:0.65rem;">{{ p.status }}</span></td>
-                                <td>
-                                    <span class="status-badge" :class="p.confirmed ? 'status-confirmed' : 'status-unconfirmed'" @click="toggleConfirm(getOriginalIndex(p))">
-                                        {{ p.confirmed ? '✅' : '❌' }}
-                                    </span>
-                                </td>
-                                <td style="font-size:0.65rem;color:#6a7f9a;">{{ p.scanTime || '—' }}</td>
-                                <td>
-                                    <div class="admin-actions-cell">
-                                        <button class="edit-btn" @click="editRow(getOriginalIndex(p))" title="Modifier"><i class="fas fa-edit"></i></button>
-                                        <button class="delete-btn" @click="deleteRow(getOriginalIndex(p))" title="Supprimer"><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="filteredAndSortedParticipants.length === 0">
-                                <td colspan="10" class="text-muted" style="text-align:center;padding:20px;">Aucun inscrit correspondant aux filtres</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-wrap" :class="{ collapsed: !participantsTableExpanded }">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:20px;"><input type="checkbox" @change="selectAll($event)"></th>
+                                    <th @click="setSort('number')">N° Ticket <i class="fas" :class="getSortIcon('number')"></i></th>
+                                    <th @click="setSort('obtainedTime')">Obtenu le <i class="fas" :class="getSortIcon('obtainedTime')"></i></th>
+                                    <th @click="setSort('lastname')">Nom <i class="fas" :class="getSortIcon('lastname')"></i></th>
+                                    <th @click="setSort('firstname')">Prénom <i class="fas" :class="getSortIcon('firstname')"></i></th>
+                                    <th @click="setSort('class')">Classe <i class="fas" :class="getSortIcon('class')"></i></th>
+                                    <th @click="setSort('status')">Statut <i class="fas" :class="getSortIcon('status')"></i></th>
+                                    <th>Confirmé</th>
+                                    <th @click="setSort('scanTime')">Scan le <i class="fas" :class="getSortIcon('scanTime')"></i></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(p, idx) in filteredAndSortedParticipants" :key="p.id">
+                                    <td><input type="checkbox" v-model="selectedRows" :value="getOriginalIndex(p)"></td>
+                                    <td><span style="font-weight:600;color:#0b1e33;">#{{ p.number.toString().padStart(10, '0') }}</span></td>
+                                    <td><span class="badge-time"><i class="far fa-clock" style="color:#c9a84c;"></i> {{ p.obtainedTime || '—' }}</span></td>
+                                    <td><strong>{{ p.lastname }}</strong></td>
+                                    <td>{{ p.firstname }}</td>
+                                    <td>{{ p.class }}</td>
+                                    <td><span style="background:rgba(240, 244, 250, 0.9);padding:2px 10px;border-radius:40px;font-size:0.65rem;">{{ p.status }}</span></td>
+                                    <td>
+                                        <span class="status-badge" :class="p.confirmed ? 'status-confirmed' : 'status-unconfirmed'" @click="toggleConfirm(getOriginalIndex(p))">
+                                            {{ p.confirmed ? '✅' : '❌' }}
+                                        </span>
+                                    </td>
+                                    <td style="font-size:0.65rem;color:#6a7f9a;">{{ p.scanTime || '—' }}</td>
+                                    <td>
+                                        <div class="admin-actions-cell">
+                                            <button class="edit-btn" @click="editRow(getOriginalIndex(p))" title="Modifier"><i class="fas fa-edit"></i></button>
+                                            <button class="delete-btn" @click="deleteRow(getOriginalIndex(p))" title="Supprimer"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="filteredAndSortedParticipants.length === 0">
+                                    <td colspan="10" class="text-muted" style="text-align:center;padding:20px;">Aucun inscrit correspondant aux filtres</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1272,7 +1360,12 @@
             formSuccess: '',
             loading: true,
             downloading: false,
+            refreshing: false,
             unsubscribeParticipants: null,
+            // Table toggles
+            phoneTableExpanded: false,
+            logsTableExpanded: false,
+            participantsTableExpanded: false,
         },
         computed: {
             filteredAndSortedParticipants() {
@@ -1347,6 +1440,7 @@
             }
         },
         methods: {
+            // ===== FIREBASE - CHARGEMENT DES DONNÉES =====
             loadData() {
                 this.loading = true;
                 db.collection('authorizedPhones').get().then(snapshot => {
@@ -1398,6 +1492,16 @@
                 }).catch(err => console.error('Erreur chargement logs:', err));
             },
 
+            refreshData() {
+                if (this.refreshing) return;
+                this.refreshing = true;
+                // Réinitialiser les données depuis Firebase
+                this.loadData();
+                setTimeout(() => {
+                    this.refreshing = false;
+                }, 1500);
+            },
+
             loadDefaultPhones() {
                 this.authorizedPhones = [
                     { number: '0776575261', class: 'TSI-1' }, { number: '0719841962', class: 'TSI-1' },
@@ -1440,6 +1544,18 @@
                 });
             },
 
+            // ===== TABLE TOGGLES =====
+            togglePhoneTable() {
+                this.phoneTableExpanded = !this.phoneTableExpanded;
+            },
+            toggleLogsTable() {
+                this.logsTableExpanded = !this.logsTableExpanded;
+            },
+            toggleParticipantsTable() {
+                this.participantsTableExpanded = !this.participantsTableExpanded;
+            },
+
+            // ===== AUTHENTIFICATION =====
             openAdminLogin() {
                 this.showLoginModal = true;
                 this.loginForm = { firstname: '', lastname: '', password: '' };
@@ -1507,6 +1623,7 @@
                 this.formSuccess = '';
             },
 
+            // ===== GESTION DES NUMEROS AUTORISES =====
             addAuthorizedPhone() {
                 const phone = this.newPhoneNumber.trim();
                 if (!phone || phone.length < 10) {
@@ -1552,6 +1669,7 @@
                 this.selectedPhoneRows = checked ? this.authorizedPhones.map((_, idx) => idx) : [];
             },
 
+            // ===== INSCRIPTION =====
             clearMessages() {
                 this.formError = '';
                 this.formSuccess = '';
@@ -1675,6 +1793,7 @@
                 });
             },
 
+            // ===== METHODES PARTICIPANTS =====
             toggleConfirm(index) {
                 if (index !== -1) {
                     const p = this.participants[index];
@@ -1788,6 +1907,7 @@
             },
             getOriginalIndex(item) { return this.participants.indexOf(item); },
 
+            // ===== METHODES DE TRI ET FILTRAGE =====
             setSort(field) {
                 if (this.sortBy === field) {
                     this.sortAsc = !this.sortAsc;
@@ -1811,6 +1931,7 @@
                 this.sortAsc = true;
             },
 
+            // ===== METHODES POUR LES LOGS =====
             setLogSort(field) {
                 if (this.logSortBy === field) {
                     this.logSortAsc = !this.logSortAsc;
