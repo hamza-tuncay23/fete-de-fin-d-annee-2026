@@ -651,7 +651,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             display: flex;
@@ -664,34 +664,41 @@
             background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            padding: 30px;
+            padding: 35px 30px;
             border-radius: 24px;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+            max-width: 420px;
+            width: 92%;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
             text-align: center;
             position: relative;
             animation: slideUp 0.4s ease;
             border: 1px solid rgba(201, 168, 76, 0.2);
+            margin: auto;
         }
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .admin-login-modal h2 {
             color: #0b1e33;
             margin-bottom: 15px;
+            font-size: 1.4rem;
         }
         .admin-login-modal h2 i {
             color: #c9a84c;
-            margin-right: 8px;
+            margin-right: 10px;
+        }
+        .admin-login-modal p {
+            color: #6a7f9a;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
         }
         .admin-login-modal input {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid rgba(201, 168, 76, 0.2);
             border-radius: 16px;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             margin-bottom: 10px;
             transition: all 0.3s;
             background: rgba(255, 255, 255, 0.9);
@@ -707,10 +714,10 @@
             background: linear-gradient(135deg, #0b1e33 0%, #1a3a5c 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 13px 24px;
             border-radius: 60px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             cursor: pointer;
             width: 100%;
             transition: all 0.3s;
@@ -720,21 +727,23 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(11, 30, 51, 0.3);
         }
+        .admin-login-modal .btn-login i { margin-right: 8px; }
         .admin-login-modal .error-msg {
             color: #a13d3d;
-            margin-top: 8px;
+            margin-top: 10px;
             font-size: 0.85rem;
         }
         .admin-login-modal .close-btn {
             position: absolute;
-            top: 12px;
-            right: 16px;
+            top: 14px;
+            right: 18px;
             background: none;
             border: none;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             cursor: pointer;
             color: #6a7f9a;
             transition: all 0.3s;
+            line-height: 1;
         }
         .admin-login-modal .close-btn:hover {
             color: #0b1e33;
@@ -1295,12 +1304,12 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONNEXION ADMIN -->
+    <!-- MODAL DE CONNEXION ADMIN - FIXE AU MILIEU -->
     <div class="admin-login-overlay no-print" v-if="showLoginModal">
         <div class="admin-login-modal">
             <button class="close-btn" @click="closeLoginModal">&times;</button>
             <h2><i class="fas fa-lock"></i> Accès Admin</h2>
-            <p style="color:#6a7f9a; margin-bottom:12px;">Veuillez vous identifier</p>
+            <p>Veuillez vous identifier</p>
             <input type="text" v-model="loginForm.firstname" placeholder="Prénom">
             <input type="text" v-model="loginForm.lastname" placeholder="Nom">
             <input type="password" v-model="loginForm.password" placeholder="Code d'accès" @keyup.enter="loginAdmin">
@@ -1362,7 +1371,6 @@
             downloading: false,
             refreshing: false,
             unsubscribeParticipants: null,
-            // Table toggles
             phoneTableExpanded: false,
             logsTableExpanded: false,
             participantsTableExpanded: false,
@@ -1440,7 +1448,6 @@
             }
         },
         methods: {
-            // ===== FIREBASE - CHARGEMENT DES DONNÉES =====
             loadData() {
                 this.loading = true;
                 db.collection('authorizedPhones').get().then(snapshot => {
@@ -1495,7 +1502,6 @@
             refreshData() {
                 if (this.refreshing) return;
                 this.refreshing = true;
-                // Réinitialiser les données depuis Firebase
                 this.loadData();
                 setTimeout(() => {
                     this.refreshing = false;
@@ -1544,7 +1550,6 @@
                 });
             },
 
-            // ===== TABLE TOGGLES =====
             togglePhoneTable() {
                 this.phoneTableExpanded = !this.phoneTableExpanded;
             },
@@ -1555,7 +1560,6 @@
                 this.participantsTableExpanded = !this.participantsTableExpanded;
             },
 
-            // ===== AUTHENTIFICATION =====
             openAdminLogin() {
                 this.showLoginModal = true;
                 this.loginForm = { firstname: '', lastname: '', password: '' };
@@ -1623,7 +1627,6 @@
                 this.formSuccess = '';
             },
 
-            // ===== GESTION DES NUMEROS AUTORISES =====
             addAuthorizedPhone() {
                 const phone = this.newPhoneNumber.trim();
                 if (!phone || phone.length < 10) {
@@ -1669,7 +1672,6 @@
                 this.selectedPhoneRows = checked ? this.authorizedPhones.map((_, idx) => idx) : [];
             },
 
-            // ===== INSCRIPTION =====
             clearMessages() {
                 this.formError = '';
                 this.formSuccess = '';
@@ -1793,7 +1795,6 @@
                 });
             },
 
-            // ===== METHODES PARTICIPANTS =====
             toggleConfirm(index) {
                 if (index !== -1) {
                     const p = this.participants[index];
@@ -1907,7 +1908,6 @@
             },
             getOriginalIndex(item) { return this.participants.indexOf(item); },
 
-            // ===== METHODES DE TRI ET FILTRAGE =====
             setSort(field) {
                 if (this.sortBy === field) {
                     this.sortAsc = !this.sortAsc;
@@ -1931,7 +1931,6 @@
                 this.sortAsc = true;
             },
 
-            // ===== METHODES POUR LES LOGS =====
             setLogSort(field) {
                 if (this.logSortBy === field) {
                     this.logSortAsc = !this.logSortAsc;
