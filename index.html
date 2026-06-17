@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hamza Margal · Fin d’Année 2026</title>
+    <title>Hamza Margal · Fin d'Année 2026</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Bibliothèque QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* ===== STYLES EXISTANTS ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
         body {
             background: url('Fête.jpg') no-repeat center center fixed;
@@ -43,8 +46,6 @@
             z-index: 1;
             border: 1px solid rgba(201, 168, 76, 0.2);
         }
-        .color-blue { color: #0b1e33; }
-        .color-gold { color: #c9a84c; }
         .bde-header {
             display: flex;
             justify-content: space-between;
@@ -613,20 +614,6 @@
             text-decoration: line-through;
         }
         .sort-active { color: #c9a84c !important; }
-        .authorized-phone {
-            background: rgba(92, 184, 92, 0.1);
-            border-left: 3px solid #5a9e6f;
-        }
-        .phone-number-tag {
-            display: inline-block;
-            background: rgba(201, 168, 76, 0.15);
-            padding: 2px 10px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            color: #0b1e33;
-            margin: 2px;
-            font-family: monospace;
-        }
         .error-msg-form {
             color: #a13d3d;
             font-size: 0.85rem;
@@ -651,6 +638,22 @@
             border-radius: 12px;
         }
         .success-msg-form i { color: #5a9e6f; }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #6a7f9a;
+        }
+        .loading-spinner i {
+            font-size: 2rem;
+            color: #c9a84c;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
         @media print {
             body { background: white !important; }
@@ -730,20 +733,24 @@
 <div class="app-wrapper" id="app">
     <!-- HEADER -->
     <div class="bde-header no-print">
-        <h1><i class="fas fa-graduation-cap"></i> Hamza Margal · Fin d’Année</h1>
+        <h1><i class="fas fa-graduation-cap"></i> Hamza Margal · Fin d'Année</h1>
         <button class="btn-admin-toggle" @click="openAdminLogin">
             <i class="fas fa-user-shield"></i> Admin
         </button>
     </div>
 
+    <!-- LOADING -->
+    <div v-if="loading" class="loading-spinner">
+        <i class="fas fa-spinner"></i>&nbsp; Chargement des données...
+    </div>
+
     <!-- PAGE PRINCIPALE -->
-    <div class="page" :class="{ active: currentPage === 'main' }">
+    <div class="page" :class="{ active: currentPage === 'main' && !loading }">
         <div class="main-grid">
             <div>
                 <div class="card">
                     <div class="card-title no-print"><i class="fas fa-pen-alt"></i> Inscription</div>
                     
-                    <!-- Message d'erreur/succès -->
                     <div v-if="formError" class="error-msg-form">
                         <i class="fas fa-exclamation-circle"></i> {{ formError }}
                     </div>
@@ -771,7 +778,7 @@
                             <option value="Visiteur">Visiteur</option>
                         </select>
                     </div>
-                    <button class="btn-primary no-print" @click="generateTicket" :disabled="isPhoneBlocked">
+                    <button class="btn-primary no-print" @click="generateTicket" :disabled="isPhoneBlocked || loading">
                         <i class="fas fa-qrcode"></i> 
                         {{ isPhoneBlocked ? 'Numéro non autorisé' : 'Obtenir mon ticket QR' }}
                     </button>
@@ -835,7 +842,7 @@
     </div>
 
     <!-- PAGE ADMIN STANDARD -->
-    <div class="page" :class="{ active: currentPage === 'admin' }">
+    <div class="page" :class="{ active: currentPage === 'admin' && !loading }">
         <div class="admin-grid">
             <div class="card">
                 <div class="admin-header-bar">
@@ -903,7 +910,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(p, idx) in filteredAndSortedParticipants" :key="p.number">
+                            <tr v-for="(p, idx) in filteredAndSortedParticipants" :key="p.id">
                                 <td><input type="checkbox" v-model="selectedRows" :value="getOriginalIndex(p)"></td>
                                 <td><span style="font-weight:600;color:#0b1e33;">#{{ p.number.toString().padStart(10, '0') }}</span></td>
                                 <td><span class="badge-time"><i class="far fa-clock" style="color:#c9a84c;"></i> {{ p.obtainedTime || '—' }}</span></td>
@@ -938,7 +945,7 @@
     </div>
 
     <!-- PAGE SUPER ADMIN -->
-    <div class="page" :class="{ active: currentPage === 'superadmin' }">
+    <div class="page" :class="{ active: currentPage === 'superadmin' && !loading }">
         <div class="admin-grid">
             <div class="card">
                 <div class="admin-header-bar">
@@ -1098,7 +1105,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(p, idx) in filteredAndSortedParticipants" :key="p.number">
+                            <tr v-for="(p, idx) in filteredAndSortedParticipants" :key="p.id">
                                 <td><input type="checkbox" v-model="selectedRows" :value="getOriginalIndex(p)"></td>
                                 <td><span style="font-weight:600;color:#0b1e33;">#{{ p.number.toString().padStart(10, '0') }}</span></td>
                                 <td><span class="badge-time"><i class="far fa-clock" style="color:#c9a84c;"></i> {{ p.obtainedTime || '—' }}</span></td>
@@ -1146,6 +1153,22 @@
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 <script>
+    // ===== CONFIGURATION FIREBASE =====
+    const firebaseConfig = {
+        apiKey: "AIzaSyDz_cQhJ169gFPpuNGJqg_RDzmSyH2DdBg",
+        authDomain: "fete-fin-annee-2026.firebaseapp.com",
+        projectId: "fete-fin-annee-2026",
+        storageBucket: "fete-fin-annee-2026.firebasestorage.app",
+        messagingSenderId: "931905902028",
+        appId: "1:931905902028:web:a32344ce01f551b1043969",
+        measurementId: "G-LXZD5HKC9X"
+    };
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ===== APPLICATION VUE =====
     new Vue({
         el: '#app',
         data: {
@@ -1165,22 +1188,21 @@
             editingIndex: null,
             qrInstance: null,
             logIdCounter: 1,
-            // Filtres et tris
             searchQuery: '',
             filterStatus: 'all',
             filterConfirmed: 'all',
             sortBy: 'number',
             sortAsc: true,
-            // Logs
             logSearchQuery: '',
             logSortBy: 'loginTime',
             logSortAsc: false,
-            // Numéros autorisés
             authorizedPhones: [],
             newPhoneNumber: '',
             newPhoneClass: 'TSI-1',
             formError: '',
             formSuccess: '',
+            loading: true,
+            unsubscribeParticipants: null,
         },
         computed: {
             filteredAndSortedParticipants() {
@@ -1191,7 +1213,7 @@
                         p.firstname.toLowerCase().includes(q) ||
                         p.lastname.toLowerCase().includes(q) ||
                         p.phone.includes(q) ||
-                        p.email.toLowerCase().includes(q) ||
+                        (p.email && p.email.toLowerCase().includes(q)) ||
                         String(p.number).includes(q) ||
                         p.class.toLowerCase().includes(q)
                     );
@@ -1255,6 +1277,144 @@
             }
         },
         methods: {
+            // ===== FIREBASE - CHARGEMENT DES DONNÉES =====
+            loadData() {
+                this.loading = true;
+                
+                // Charger les numéros autorisés
+                db.collection('authorizedPhones').get().then(snapshot => {
+                    this.authorizedPhones = [];
+                    snapshot.forEach(doc => {
+                        this.authorizedPhones.push(doc.data());
+                    });
+                    if (this.authorizedPhones.length === 0) {
+                        this.loadDefaultPhones();
+                    }
+                }).catch(err => {
+                    console.error('Erreur chargement numéros:', err);
+                    this.loadDefaultPhones();
+                });
+
+                // Écouter les changements des participants en temps réel
+                if (this.unsubscribeParticipants) {
+                    this.unsubscribeParticipants();
+                }
+                
+                this.unsubscribeParticipants = db.collection('participants')
+                    .orderBy('number', 'asc')
+                    .onSnapshot(snapshot => {
+                        this.participants = [];
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            data.id = doc.id;
+                            this.participants.push(data);
+                        });
+                        if (this.participants.length > 0) {
+                            const maxNumber = Math.max(...this.participants.map(p => p.number || 0));
+                            this.ticketCounter = maxNumber + 1;
+                        }
+                        this.loading = false;
+                    }, error => {
+                        console.error('Erreur Firestore:', error);
+                        this.loading = false;
+                    });
+
+                // Charger les logs admin
+                db.collection('adminLogs').orderBy('loginTime', 'desc').get().then(snapshot => {
+                    this.adminLogs = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        data.id = doc.id;
+                        this.adminLogs.push(data);
+                    });
+                    if (this.adminLogs.length > 0) {
+                        this.logIdCounter = Math.max(...this.adminLogs.map(l => l.id || 0)) + 1;
+                    }
+                }).catch(err => console.error('Erreur chargement logs:', err));
+            },
+
+            loadDefaultPhones() {
+                this.authorizedPhones = [
+                    // TSI-1
+                    { number: '0776575261', class: 'TSI-1' },
+                    { number: '0719841962', class: 'TSI-1' },
+                    { number: '0634464094', class: 'TSI-1' },
+                    { number: '0633250960', class: 'TSI-1' },
+                    { number: '0610171188', class: 'TSI-1' },
+                    { number: '0644872199', class: 'TSI-1' },
+                    { number: '0649603694', class: 'TSI-1' },
+                    { number: '0607974160', class: 'TSI-1' },
+                    { number: '0621036371', class: 'TSI-1' },
+                    { number: '0770647622', class: 'TSI-1' },
+                    { number: '0600100070', class: 'TSI-1' },
+                    { number: '0641319116', class: 'TSI-1' },
+                    { number: '0609388851', class: 'TSI-1' },
+                    { number: '0711876854', class: 'TSI-1' },
+                    { number: '0603153849', class: 'TSI-1' },
+                    { number: '0635613405', class: 'TSI-1' },
+                    { number: '0691240952', class: 'TSI-1' },
+                    { number: '0625077387', class: 'TSI-1' },
+                    { number: '0691301641', class: 'TSI-1' },
+                    // TSI-2
+                    { number: '0681956648', class: 'TSI-2' },
+                    { number: '0716310938', class: 'TSI-2' },
+                    { number: '0684871530', class: 'TSI-2' },
+                    { number: '0710003040', class: 'TSI-2' },
+                    { number: '0618681517', class: 'TSI-2' },
+                    { number: '0690625961', class: 'TSI-2' },
+                    { number: '0714219529', class: 'TSI-2' },
+                    { number: '0640262122', class: 'TSI-2' },
+                    { number: '0714500408', class: 'TSI-2' },
+                    { number: '0619466689', class: 'TSI-2' },
+                    { number: '0637720052', class: 'TSI-2' },
+                    { number: '0632201123', class: 'TSI-2' },
+                    { number: '0771586316', class: 'TSI-2' },
+                    { number: '0650369338', class: 'TSI-2' },
+                    { number: '0691058166', class: 'TSI-2' },
+                    { number: '0700160405', class: 'TSI-2' },
+                    { number: '0775259567', class: 'TSI-2' },
+                    { number: '0716172423', class: 'TSI-2' },
+                    // TSI-3
+                    { number: '0610474268', class: 'TSI-3' },
+                    { number: '0777402332', class: 'TSI-3' },
+                    { number: '0767249492', class: 'TSI-3' },
+                    { number: '0673018559', class: 'TSI-3' },
+                    { number: '0615613537', class: 'TSI-3' },
+                    { number: '0629351981', class: 'TSI-3' },
+                    { number: '0664853846', class: 'TSI-3' },
+                    { number: '0621251365', class: 'TSI-3' },
+                    { number: '0619300599', class: 'TSI-3' },
+                    { number: '0614012895', class: 'TSI-3' },
+                    { number: '0644467972', class: 'TSI-3' },
+                    { number: '0612194219', class: 'TSI-3' },
+                    { number: '0655331902', class: 'TSI-3' },
+                    { number: '0763272609', class: 'TSI-3' },
+                    { number: '0771047909', class: 'TSI-3' },
+                    // MPSI-1
+                    { number: '0617507750', class: 'MPSI-1' },
+                    { number: '0601919351', class: 'MPSI-1' },
+                    { number: '0697035706', class: 'MPSI-1' },
+                    { number: '0767880693', class: 'MPSI-1' },
+                    { number: '0626143836', class: 'MPSI-1' },
+                    { number: '0767748809', class: 'MPSI-1' },
+                    // MPSI-2
+                    { number: '0713526906', class: 'MPSI-2' },
+                    { number: '0603273216', class: 'MPSI-2' },
+                    { number: '0760234168', class: 'MPSI-2' },
+                    { number: '0626768713', class: 'MPSI-2' },
+                    { number: '0687919151', class: 'MPSI-2' },
+                    { number: '0668034758', class: 'MPSI-2' },
+                    { number: '0675657421', class: 'MPSI-2' },
+                    { number: '0623813122', class: 'MPSI-2' },
+                    // MP-2
+                    { number: '0781254076', class: 'MP-2' }
+                ];
+                // Sauvegarder dans Firebase
+                this.authorizedPhones.forEach(phone => {
+                    db.collection('authorizedPhones').add(phone).catch(err => console.error(err));
+                });
+            },
+
             // ===== AUTHENTIFICATION =====
             openAdminLogin() {
                 this.showLoginModal = true;
@@ -1277,12 +1437,7 @@
                     this.currentPage = 'superadmin';
                     this.adminName = firstname + ' ' + lastname;
                     this.loginError = '';
-                    this.adminLogs.push({
-                        id: this.logIdCounter++,
-                        firstname: firstname,
-                        lastname: lastname,
-                        loginTime: this.getCurrentDateTime()
-                    });
+                    this.addAdminLog(firstname, lastname);
                     return;
                 }
                 if (password === 'bdefete2026') {
@@ -1290,15 +1445,21 @@
                     this.currentPage = 'admin';
                     this.adminName = firstname + ' ' + lastname;
                     this.loginError = '';
-                    this.adminLogs.push({
-                        id: this.logIdCounter++,
-                        firstname: firstname,
-                        lastname: lastname,
-                        loginTime: this.getCurrentDateTime()
-                    });
+                    this.addAdminLog(firstname, lastname);
                     return;
                 }
                 this.loginError = '❌ Identifiants incorrects. Réessayez.';
+            },
+            addAdminLog(firstname, lastname) {
+                const log = {
+                    id: this.logIdCounter++,
+                    firstname: firstname,
+                    lastname: lastname,
+                    loginTime: this.getCurrentDateTime()
+                };
+                db.collection('adminLogs').add(log).then(() => {
+                    this.adminLogs.push(log);
+                }).catch(err => console.error('Erreur ajout log:', err));
             },
             getCurrentDateTime() {
                 const now = new Date();
@@ -1333,13 +1494,16 @@
                     alert('Ce numéro est déjà dans la liste');
                     return;
                 }
-                this.authorizedPhones.push({
-                    number: phone,
-                    class: this.newPhoneClass
+                const newPhone = { number: phone, class: this.newPhoneClass };
+                db.collection('authorizedPhones').add(newPhone).then(() => {
+                    this.authorizedPhones.push(newPhone);
+                    this.newPhoneNumber = '';
+                    this.formSuccess = '✅ Numéro ajouté avec succès !';
+                    setTimeout(() => this.formSuccess = '', 3000);
+                }).catch(err => {
+                    alert('Erreur lors de l\'ajout');
+                    console.error(err);
                 });
-                this.newPhoneNumber = '';
-                this.formSuccess = '✅ Numéro ajouté avec succès !';
-                setTimeout(() => this.formSuccess = '', 3000);
             },
             deleteSelectedPhones() {
                 if (this.selectedPhoneRows.length === 0) {
@@ -1349,6 +1513,12 @@
                 if (confirm('Supprimer les ' + this.selectedPhoneRows.length + ' numéros sélectionnés ?')) {
                     const sorted = [...this.selectedPhoneRows].sort((a, b) => b - a);
                     for (const idx of sorted) {
+                        const phone = this.authorizedPhones[idx];
+                        db.collection('authorizedPhones').where('number', '==', phone.number).get().then(snapshot => {
+                            snapshot.forEach(doc => {
+                                doc.ref.delete();
+                            });
+                        });
                         this.authorizedPhones.splice(idx, 1);
                     }
                     this.selectedPhoneRows = [];
@@ -1356,14 +1526,10 @@
             },
             selectAllPhones(event) {
                 const checked = event.target.checked;
-                if (checked) {
-                    this.selectedPhoneRows = this.authorizedPhones.map((_, idx) => idx);
-                } else {
-                    this.selectedPhoneRows = [];
-                }
+                this.selectedPhoneRows = checked ? this.authorizedPhones.map((_, idx) => idx) : [];
             },
 
-            // ===== INSCRIPTION AVEC VERIFICATION =====
+            // ===== INSCRIPTION =====
             clearMessages() {
                 this.formError = '';
                 this.formSuccess = '';
@@ -1378,7 +1544,6 @@
                     return;
                 }
                 
-                // Vérification du numéro pour les Participants et Visiteurs (UNIQUEMENT PAR NUMERO)
                 if (status !== 'Administration ou Professeur') {
                     if (!this.authorizedPhones.some(p => p.number === phone)) {
                         this.formError = '⛔ Ce numéro n\'est pas autorisé pour les Participants et Visiteurs. Veuillez sélectionner "Administration ou Professeur" ou contacter l\'administration.';
@@ -1400,21 +1565,28 @@
                     obtainedTime: now,
                     scanTime: null
                 };
-                this.participants.push(newParticipant);
-                this.currentTicket = { ...newParticipant };
-                this.formSuccess = '✅ Ticket généré avec succès ! Votre numéro : #' + number.toString().padStart(10, '0');
                 
-                this.form.firstname = '';
-                this.form.lastname = '';
-                this.form.class = '';
-                this.form.phone = '';
-                this.form.email = '';
-                this.form.status = 'Participant';
+                db.collection('participants').add(newParticipant).then(docRef => {
+                    newParticipant.id = docRef.id;
+                    this.participants.push(newParticipant);
+                    this.currentTicket = { ...newParticipant };
+                    this.formSuccess = '✅ Ticket généré avec succès ! Votre numéro : #' + number.toString().padStart(10, '0');
+                    
+                    this.form.firstname = '';
+                    this.form.lastname = '';
+                    this.form.class = '';
+                    this.form.phone = '';
+                    this.form.email = '';
+                    this.form.status = 'Participant';
 
-                this.$nextTick(() => {
-                    this.generateQRCode();
+                    this.$nextTick(() => {
+                        this.generateQRCode();
+                    });
+                    setTimeout(() => this.formSuccess = '', 5000);
+                }).catch(err => {
+                    this.formError = '❌ Erreur lors de l\'enregistrement. Veuillez réessayer.';
+                    console.error(err);
                 });
-                setTimeout(() => this.formSuccess = '', 5000);
             },
             generateQRCode() {
                 const container = document.getElementById('qrContainer');
@@ -1446,13 +1618,20 @@
             // ===== METHODES PARTICIPANTS =====
             toggleConfirm(index) {
                 if (index !== -1) {
-                    this.participants[index].confirmed = !this.participants[index].confirmed;
-                    if (this.participants[index].confirmed) {
-                        this.participants[index].scanTime = this.getCurrentDateTime();
+                    const p = this.participants[index];
+                    p.confirmed = !p.confirmed;
+                    if (p.confirmed) {
+                        p.scanTime = this.getCurrentDateTime();
                     }
+                    db.collection('participants').doc(p.id).update({
+                        confirmed: p.confirmed,
+                        scanTime: p.scanTime
+                    }).catch(err => console.error('Erreur mise à jour:', err));
                 }
             },
-            refreshList() { alert('Liste actualisée'); },
+            refreshList() { 
+                this.loadData();
+            },
             exportCSV() {
                 if (this.participants.length === 0) {
                     alert('Aucune donnée à exporter');
@@ -1487,12 +1666,18 @@
                     obtainedTime: now,
                     scanTime: null
                 };
-                this.participants.push(newRow);
+                db.collection('participants').add(newRow).then(docRef => {
+                    newRow.id = docRef.id;
+                    this.participants.push(newRow);
+                }).catch(err => console.error('Erreur ajout:', err));
             },
             deleteRow(index) {
                 if (index !== -1 && confirm('Supprimer cette ligne ?')) {
-                    this.participants.splice(index, 1);
-                    this.selectedRows = [];
+                    const p = this.participants[index];
+                    db.collection('participants').doc(p.id).delete().then(() => {
+                        this.participants.splice(index, 1);
+                        this.selectedRows = [];
+                    }).catch(err => console.error('Erreur suppression:', err));
                 }
             },
             deleteSelected() {
@@ -1504,7 +1689,10 @@
                     const sorted = [...this.selectedRows].sort((a, b) => b - a);
                     for (const idx of sorted) {
                         if (idx < this.participants.length) {
-                            this.participants.splice(idx, 1);
+                            const p = this.participants[idx];
+                            db.collection('participants').doc(p.id).delete().then(() => {
+                                this.participants.splice(idx, 1);
+                            }).catch(err => console.error('Erreur suppression:', err));
                         }
                     }
                     this.selectedRows = [];
@@ -1521,10 +1709,15 @@
                         if (newClass !== null) {
                             const newStatus = prompt('Statut (Participant, Administration ou Professeur, Visiteur) :', p.status);
                             if (newStatus !== null) {
-                                this.participants[index].firstname = newFirstname || p.firstname;
-                                this.participants[index].lastname = newLastname || p.lastname;
-                                this.participants[index].class = newClass || p.class;
-                                this.participants[index].status = newStatus || p.status;
+                                const updates = {
+                                    firstname: newFirstname || p.firstname,
+                                    lastname: newLastname || p.lastname,
+                                    class: newClass || p.class,
+                                    status: newStatus || p.status
+                                };
+                                db.collection('participants').doc(p.id).update(updates).then(() => {
+                                    Object.assign(p, updates);
+                                }).catch(err => console.error('Erreur modification:', err));
                             }
                         }
                     }
@@ -1532,11 +1725,7 @@
             },
             selectAll(event) {
                 const checked = event.target.checked;
-                if (checked) {
-                    this.selectedRows = this.filteredAndSortedParticipants.map(p => this.participants.indexOf(p));
-                } else {
-                    this.selectedRows = [];
-                }
+                this.selectedRows = checked ? this.filteredAndSortedParticipants.map(p => this.participants.indexOf(p)) : [];
             },
             getOriginalIndex(item) { return this.participants.indexOf(item); },
 
@@ -1582,11 +1771,7 @@
             getOriginalLogIndex(log) { return this.adminLogs.indexOf(log); },
             selectAllLogsTable(event) {
                 const checked = event.target.checked;
-                if (checked) {
-                    this.selectedLogRows = this.filteredAndSortedLogs.map(log => this.adminLogs.indexOf(log));
-                } else {
-                    this.selectedLogRows = [];
-                }
+                this.selectedLogRows = checked ? this.filteredAndSortedLogs.map(log => this.adminLogs.indexOf(log)) : [];
             },
             selectAllLogs() {
                 this.selectedLogRows = this.filteredAndSortedLogs.map(log => this.adminLogs.indexOf(log));
@@ -1601,6 +1786,12 @@
                     const sorted = [...this.selectedLogRows].sort((a, b) => b - a);
                     for (const idx of sorted) {
                         if (idx < this.adminLogs.length) {
+                            const log = this.adminLogs[idx];
+                            db.collection('adminLogs').where('id', '==', log.id).get().then(snapshot => {
+                                snapshot.forEach(doc => {
+                                    doc.ref.delete();
+                                });
+                            });
                             this.adminLogs.splice(idx, 1);
                         }
                     }
@@ -1609,94 +1800,12 @@
             }
         },
         mounted() {
-            // Initialisation des numéros autorisés (UNIQUEMENT PAR NUMERO)
-            this.authorizedPhones = [
-                // TSI-1
-                { number: '0776575261', class: 'TSI-1' },
-                { number: '0719841962', class: 'TSI-1' },
-                { number: '0634464094', class: 'TSI-1' },
-                { number: '0633250960', class: 'TSI-1' },
-                { number: '0610171188', class: 'TSI-1' },
-                { number: '0644872199', class: 'TSI-1' },
-                { number: '0649603694', class: 'TSI-1' },
-                { number: '0607974160', class: 'TSI-1' },
-                { number: '0621036371', class: 'TSI-1' },
-                { number: '0770647622', class: 'TSI-1' },
-                { number: '0600100070', class: 'TSI-1' },
-                { number: '0641319116', class: 'TSI-1' },
-                { number: '0609388851', class: 'TSI-1' },
-                { number: '0711876854', class: 'TSI-1' },
-                { number: '0603153849', class: 'TSI-1' },
-                { number: '0635613405', class: 'TSI-1' },
-                { number: '0691240952', class: 'TSI-1' },
-                { number: '0625077387', class: 'TSI-1' },
-                { number: '0691301641', class: 'TSI-1' },
-                // TSI-2
-                { number: '0681956648', class: 'TSI-2' },
-                { number: '0716310938', class: 'TSI-2' },
-                { number: '0684871530', class: 'TSI-2' },
-                { number: '0710003040', class: 'TSI-2' },
-                { number: '0618681517', class: 'TSI-2' },
-                { number: '0690625961', class: 'TSI-2' },
-                { number: '0714219529', class: 'TSI-2' },
-                { number: '0640262122', class: 'TSI-2' },
-                { number: '0714500408', class: 'TSI-2' },
-                { number: '0619466689', class: 'TSI-2' },
-                { number: '0637720052', class: 'TSI-2' },
-                { number: '0632201123', class: 'TSI-2' },
-                { number: '0771586316', class: 'TSI-2' },
-                { number: '0650369338', class: 'TSI-2' },
-                { number: '0691058166', class: 'TSI-2' },
-                { number: '0700160405', class: 'TSI-2' },
-                { number: '0775259567', class: 'TSI-2' },
-                { number: '0716172423', class: 'TSI-2' },
-                // TSI-3
-                { number: '0610474268', class: 'TSI-3' },
-                { number: '0777402332', class: 'TSI-3' },
-                { number: '0767249492', class: 'TSI-3' },
-                { number: '0673018559', class: 'TSI-3' },
-                { number: '0615613537', class: 'TSI-3' },
-                { number: '0629351981', class: 'TSI-3' },
-                { number: '0664853846', class: 'TSI-3' },
-                { number: '0621251365', class: 'TSI-3' },
-                { number: '0619300599', class: 'TSI-3' },
-                { number: '0614012895', class: 'TSI-3' },
-                { number: '0644467972', class: 'TSI-3' },
-                { number: '0612194219', class: 'TSI-3' },
-                { number: '0655331902', class: 'TSI-3' },
-                { number: '0763272609', class: 'TSI-3' },
-                { number: '0771047909', class: 'TSI-3' },
-                // MPSI-1
-                { number: '0617507750', class: 'MPSI-1' },
-                { number: '0601919351', class: 'MPSI-1' },
-                { number: '0697035706', class: 'MPSI-1' },
-                { number: '0767880693', class: 'MPSI-1' },
-                { number: '0626143836', class: 'MPSI-1' },
-                { number: '0767748809', class: 'MPSI-1' },
-                // MPSI-2
-                { number: '0713526906', class: 'MPSI-2' },
-                { number: '0603273216', class: 'MPSI-2' },
-                { number: '0760234168', class: 'MPSI-2' },
-                { number: '0626768713', class: 'MPSI-2' },
-                { number: '0687919151', class: 'MPSI-2' },
-                { number: '0668034758', class: 'MPSI-2' },
-                { number: '0675657421', class: 'MPSI-2' },
-                { number: '0623813122', class: 'MPSI-2' },
-                // MP-2
-                { number: '0781254076', class: 'MP-2' }
-            ];
-
-            const now = this.getCurrentDateTime();
-            this.participants = [
-                { firstname: 'HAMZA', lastname: 'MARGAL', class: 'MP-2', phone: '0781254076', email: 'hamzamargal2005@gmail.com', status: 'Administration ou Professeur', confirmed: true, number: 123456789, obtainedTime: now, scanTime: now },
-                { firstname: 'Mohammed', lastname: 'Maaffer', class: 'MP-1', phone: '0612345678', email: 'mohammed@test.com', status: 'Participant', confirmed: false, number: 123456790, obtainedTime: now, scanTime: null }
-            ];
-            this.ticketCounter = 123456791;
-            
-            this.adminLogs = [
-                { id: 1, firstname: 'Hamza', lastname: 'Margal', loginTime: '15/06/2026 10:30:15' }
-            ];
-            this.logIdCounter = 2;
+            this.loadData();
+        },
+        beforeDestroy() {
+            if (this.unsubscribeParticipants) {
+                this.unsubscribeParticipants();
+            }
         }
     });
 </script>
