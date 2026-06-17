@@ -100,7 +100,7 @@
         }
         .main-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-top: 20px;
         }
@@ -192,7 +192,7 @@
             transform: none !important;
         }
 
-        /* ===== TICKET - TOUT VISIBLE ===== */
+        /* ===== TICKET ===== */
         .ticket-preview {
             background: linear-gradient(145deg, #fcf8f0, #f5efe2);
             border-radius: 24px;
@@ -416,12 +416,22 @@
             transition: all 0.3s;
             margin-top: 8px;
             box-shadow: 0 4px 15px rgba(201, 168, 76, 0.2);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .btn-download:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(201, 168, 76, 0.3);
         }
-        .btn-download i { margin-right: 8px; }
+        .btn-download i { font-size: 1rem; }
+        .btn-download:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
         .table-wrap {
             overflow-x: auto;
             margin-top: 10px;
@@ -691,10 +701,6 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .download-loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
@@ -715,6 +721,7 @@
     <!-- PAGE PRINCIPALE -->
     <div class="page" :class="{ active: currentPage === 'main' && !loading }">
         <div class="main-grid">
+            <!-- Colonne gauche : Inscription + Ticket -->
             <div>
                 <div class="card" style="max-width:100%; overflow:visible;">
                     <div class="card-title no-print"><i class="fas fa-pen-alt"></i> Inscription</div>
@@ -796,11 +803,12 @@
                         </div>
                     </div>
                     <button class="btn-download no-print" v-if="currentTicket" @click="downloadTicket" :disabled="downloading">
-                        <i class="fas fa-download"></i> {{ downloading ? 'Téléchargement...' : 'Télécharger le ticket' }}
+                        <i class="fas fa-download"></i> {{ downloading ? 'Téléchargement...' : 'Télécharger le ticket (PNG)' }}
                     </button>
                 </div>
             </div>
 
+            <!-- Colonne droite : Programme -->
             <div>
                 <div class="card">
                     <div class="card-title no-print"><i class="far fa-calendar-alt"></i> Programme</div>
@@ -1547,7 +1555,7 @@
                 }
             },
 
-            // ===== TÉLÉCHARGER LE TICKET EN IMAGE =====
+            // ===== TÉLÉCHARGER LE TICKET EN IMAGE PNG =====
             downloadTicket() {
                 if (this.downloading) return;
                 this.downloading = true;
@@ -1558,34 +1566,24 @@
                     return;
                 }
 
-                // Augmenter temporairement la taille pour une meilleure qualité
-                const originalWidth = element.style.width;
-                const originalMaxWidth = element.style.maxWidth;
-                element.style.width = '500px';
-                element.style.maxWidth = '500px';
-
+                // Capturer le ticket en image
                 html2canvas(element, {
-                    scale: 2,
+                    scale: 2.5,
                     useCORS: true,
                     backgroundColor: '#fcf8f0',
                     logging: false,
-                    width: 500,
+                    width: element.scrollWidth,
                     height: element.scrollHeight
                 }).then(canvas => {
-                    // Restaurer les styles
-                    element.style.width = originalWidth;
-                    element.style.maxWidth = originalMaxWidth;
-                    
                     // Créer le lien de téléchargement
                     const link = document.createElement('a');
-                    link.download = `ticket_${this.currentTicket.number}.png`;
+                    const ticketNumber = this.currentTicket ? this.currentTicket.number : 'ticket';
+                    link.download = `ticket_${ticketNumber}.png`;
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                     this.downloading = false;
                 }).catch(err => {
                     console.error('Erreur téléchargement:', err);
-                    element.style.width = originalWidth;
-                    element.style.maxWidth = originalMaxWidth;
                     this.downloading = false;
                     alert('Erreur lors du téléchargement. Veuillez réessayer.');
                 });
